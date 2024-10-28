@@ -1,9 +1,8 @@
 # Bluepill
-## Feature
+## Features
 - FreeRTOS 10.0.1
 - USB CDC
-- SSD1306 OLED through SPI1
-
+- MCP2515 CAN through SPI2
 
 IDE version:
   - STM32CubeIDE v1.13.2
@@ -16,20 +15,21 @@ IDE version:
 | DIO           | SWDIO          | 34            |
 | CLK           | SWCLK          | 37            |
 
+
 ## LED_BUILTIN
 - PC13 ouput
 
-## SPI1 pin configuration : OLED 96" SSD1306
-- Transmit only
-- SCK  -> PA5 -> 4.5 M bauds
-- MOSI -> PA7
-- CS   -> PB8
-- DC   -> PB7
-- RES  -> PB6
-- bits order : MSBFIST
-- bits length: 8
+## SPI2 pin configuration : MCP2515 CAN module 8 Mhz
+- Full-duplex master
+- SCK  -> PB13 -> 9M bauds
+- MOSI -> PB15
+- MISO -> PB14
+- CS   -> PB12
 - CPOL = 0 (idle low)
 - CPHA = 0 (1 edge)
+- bit order  : MSBFIRST
+- bits length: 8
+- External interrupt -> PA8 (falling edge)
 
 ## USB
 - CDC

@@ -62,20 +62,17 @@ void Task_display(void *argument)
 	SPI.RES   = &GPIO_WritePinRESET;
 	SSD1306_SPI_Initialize(&SPI);
 
-	// init. SSD1306 for test
-	//ssd1306_initialize_test(&SPI_Delay);
-
 	// display logo prebuild
 	SSD1306_Display();
 
-
 	while(1)
 	{
+		/* something in queue? */
 		if (xQueueReceive(UsbReceiveQueueHandle, &usb_msg, ( TickType_t ) DEF_TIMEOUT_QUEUE_RECEIVE) == pdTRUE)
 		{
 			//ITM_SendChar(usb_msg.data[2]);
-			//memset(&usb_msg, 0, sizeof(usb_msg));
 
+			/* do something */
 			usb_msg.data[2] = 0;
 		}
 

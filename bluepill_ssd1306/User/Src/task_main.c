@@ -28,13 +28,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 
-typedef struct __attribute__((packed))
-{
-	uint32_t id;
-	uint8_t dlc;
-	uint8_t data[8];
-}CAN_Msg_TypeDef;
-
 
 /* Private define ------------------------------------------------------------*/
 #define DEF_TIMEOUT_USB_FRAME        (20 * portTICK_PERIOD_MS)
@@ -44,8 +37,6 @@ typedef struct __attribute__((packed))
 
 /* Private variables ---------------------------------------------------------*/
 extern SPI_HandleTypeDef hspi1;
-
-static uint8_t _usb_rxbuf[64] = {0};
 
 extern osMessageQId UsbReceiveQueueHandle;
 
@@ -62,51 +53,28 @@ void UsbReceiveCallback(const uint8_t* const pBuf, const uint32_t* const pLen);
 
 void UsbReceiveCallback(const uint8_t* const pBuf, const uint32_t* const pLen)
 {
-	static TickType_t last_time = 0;
-	static int index = 0;
-	static USB_CAN_Msg_TypeDef msg_from_usb;
-	static uint16_t less_counter = 0;
+	static uint16_t incomplete_frame_counter = 0;
+		USB_CAN_Msg_TypeDef msg;
 
-	/* Is it time for vATask() to run? */
-	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+		/* Is it time for vATask() to run? */
+		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
 
-	TickType_t time_elapse = xTaskGetTickCount() - last_time;
+		if (*pLen == sizeof(USB_CAN_Msg_TypeDef))
+		{
+			/* copy buffer */
+			memcpy( &msg, &pBuf[0], sizeof(USB_CAN_Msg_TypeDef));
 
-	/* frame timeout */
-	if (time_elapse > DEF_TIMEOUT_USB_FRAME)
-	{
-		index = 0;
+			/* put message in queue */
+			xQueueSendFromISR(UsbReceiveQueueHandle, &msg, &xHigherPriorityTaskWoken);
+		}
+		else
+		{
+			incomplete_frame_counter++;
+		}
 
-		/* Save current time */
-		last_time = xTaskGetTickCount();
-	}
-
-
-	// debug : check if we receive less than sizeof(Message_FromHost_TypeDef)
-	if (*pLen < sizeof(USB_CAN_Msg_TypeDef))
-	{
-		less_counter++;
-	}
-
-
-	for(int i=0; i< *pLen; i++)
-	{
-		_usb_rxbuf[index++] = pBuf[i];
-	}
-
-	if (index >= sizeof(USB_CAN_Msg_TypeDef))
-	{
-		memcpy( &msg_from_usb, &_usb_rxbuf[0], sizeof(USB_CAN_Msg_TypeDef));
-
-		index -= sizeof(USB_CAN_Msg_TypeDef);
-
-		/* put message in queue */
-		xQueueSendFromISR(UsbReceiveQueueHandle, &msg_from_usb, &xHigherPriorityTaskWoken);
-	}
-
-	/* Yield if xHigherPriorityTaskWoken is true. */
-	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+		/* Yield if xHigherPriorityTaskWoken is true. */
+		portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 
 }
 
@@ -131,8 +99,8 @@ static void UsbTramsmit(void)
 {
 	static USB_CAN_Msg_TypeDef usb_msg;
 
-	usb_msg.toDevice = 0;
-	usb_msg.id = 1;
+	usb_msg.signal = (uint8_t)MsgSignalFromCAN;
+	usb_msg.id = 2;
 
 	usb_msg.dlc = 8;
 

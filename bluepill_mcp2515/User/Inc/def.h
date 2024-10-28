@@ -27,5 +27,4 @@ typedef struct __attribute__((packed))
 	uint8_t data[8];
 }USB_CAN_Msg_TypeDef;
 
-
 #endif /* U_DEF_H_ */
